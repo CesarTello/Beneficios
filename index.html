@@ -1,0 +1,270 @@
+<!DOCTYPE html> 
+<html>
+
+<head>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1"> 
+	<title>ACP Beneficios</title> 
+	<link rel="stylesheet" href="http://code.jquery.com/mobile/1.2.0/jquery.mobile-1.2.0.min.css" />
+	<link rel="stylesheet" href="beneficios.css" />
+	<script src="http://code.jquery.com/jquery-1.8.2.min.js"></script>
+	<script src="http://code.jquery.com/mobile/1.2.0/jquery.mobile-1.2.0.min.js"></script>
+	<script type="text/javascript" src="http://maps.google.com/maps/api/js?v=3&sensor=false&language=en"></script>	
+</head> 
+
+<body> 
+
+<div data-role="page" data-theme="b" data-content-theme="b">
+
+	<div data-role="header" data-theme="b" data-content-theme="b">
+	<fieldset class="ui-grid-a">
+		<div class="ui-block-a"><img src="header1.png"></div>
+		<div class="ui-block-b"><img src="header2.png"></div>	   
+	</fieldset>	
+	</div><!-- /header -->
+
+	<div data-role="content" data-theme="b" data-content-theme="b">	
+			 <h6 style="text-align: justify;margin-top:0px;">La información contenida en este sitio es de propiedad de la ACP; 
+			 por lo tanto, se prohíbe su modificación o alteración, así como su copia, 
+			 distribución, transmisión, reproducción o publicación sin que medie una 
+			 autorización previa de RHCP. Además de lo anterior, esta información es el 
+			 resultado de conversaciones con distintos comercios los cuales solo han dado 
+			 autorización para que la misma sea divulgada en medios a los que solo tengan 
+			 acceso los trabajadores de la ACP. </h6>	
+		<div class="ui-bar-c ui-corner-all ui-shadow" style="padding:1em">
+                <div data-role="fieldcontain">
+                    <label  style="width:110px;" for="textip">Número de IP:</label>
+                    <input type="text" style="width:290px;"  id="textip" placeholder="su número de IP"
+                    data-mini="true" data-theme="b">			
+                </div>
+                <input type="checkbox" id="checkboxrecordarme" data-mini="true">
+                <label for="checkboxrecordarme">Recordarme?</label>
+                 							
+		</div>	
+		<input type="button" name="entrar" id="entrar" data-icon="forward" data-iconpos="right" data-theme="b" value="Entrar" />
+	<script>
+		$('#entrar').click(function(e) {
+			e.stopImmediatePropagation();
+			e.preventDefault();		
+			var checkIPUrl = 'http://ctmconcepts.com/acpbeneficios/OfertaServices.svc/checkIP?IP=' + $('#textip').val();
+			//alert('Button entrar has been clicked valor de ip--' + $('#textip').val());
+			$.ajax(checkIPUrl,
+			{
+				beforeSend: function (xhr) {
+					// $.mobile.showPageLoadingMsg();
+				},
+
+				complete: function () {
+					// $.mobile.hidePageLoadingMsg();
+				},
+				contentType: 'application/json',
+				dataType: 'jsonp',
+				jsonp: 'callback',
+				type: 'GET',
+				error: function (xhr, ajaxOptions, thrownError) {
+					alert(xhr.status);
+					alert(xhr.responseText);
+					//alert(thrownError);
+				},
+				success: function (data) {
+					var result = data.revisaIPResult;
+					
+					if(result==='True'){
+					$.mobile.changePage( "listadoofertas.html", { transition: "slideup"} );
+					}else{alert('El número Ingresado no corresponde a un colaborador existente en la ACP!');}
+
+		         //end of success return call			
+				}
+			});			
+
+			
+		});	
+	</script>	
+	<script>
+		$( document ).bind( 'pagechange', function( event, data ){
+			if($.mobile.activePage.attr('id')==='listadoofertas'){//Begin listado ofertas
+				var listadoOfertasUrl = 'http://ctmconcepts.com/acpbeneficios/OfertaServices.svc/ListadoOfertas';
+					$.ajax(listadoOfertasUrl,
+					{
+						beforeSend: function (xhr) {
+							$.mobile.showPageLoadingMsg();
+						},
+
+						complete: function () {
+							$.mobile.hidePageLoadingMsg();
+						},
+						contentType: 'application/json',
+						dataType: 'jsonp',
+						jsonp: 'callback',
+						type: 'GET',
+						error: function (xhr, ajaxOptions, thrownError) {
+							alert(xhr.status);
+							alert(xhr.responseText);
+							//alert(thrownError);
+						},
+						success: function (data) {
+							var listadoofertasresult = data.GetListadoOfertasResult;
+							$('#beneficios').empty();
+							$.each(listadoofertasresult, function (index, listaofertas) {
+								$('#beneficios').append('<li><a href=detallecomercio.html?OfertaID=' + listaofertas.OfertaID + ' ><img src="'+ listaofertas.ComercioLogo +'" /><h3>'+ listaofertas.ComercioNombre +'</h3><p style="text-align: justify;margin-top:0px;">' + listaofertas.OfertaDescripcion + '</p><div style="margin-top:0px;float: left;width:50%;"><label style="padding-top:6px;text-align:left;font-size:11px;"><b>Válido hasta:</b> '+ listaofertas.OfertaHasta +'</label></div><div style="margin-top:0px;float: left;width:50%;text-align:right;"><label style="padding-top:6px;text-align:right;font-size:11px;"><b>Categoría:</b> '+ listaofertas.ComercioCategoria +'</label></div></a></li>');
+							});
+							$('#beneficios').listview('refresh');							
+
+						//end of success return call			
+						}
+					});		
+			} //end listado ofertas
+		
+			if($.mobile.activePage.attr('id')==='detallecomercio'){//Begin detallecomercio
+				//$.mobile.showPageLoadingMsg();
+				//get Geolocation
+				if(navigator.geolocation)
+				{
+				  navigator.geolocation.getCurrentPosition(onSuccess, onError,  { maximumAge: 3000, timeout: 5000, enableHighAccuracy: false });
+				 }
+			
+				// onSuccess Geolocation
+				function onSuccess(position) {
+				dibujamapa(position.coords.latitude,position.coords.longitude);
+				}
+
+				// onError Callback receives a PositionError object
+				//
+				function onError(error) {
+					alert('El dispositivo GPS ha excedido el tiempo permitido para responder!\n' +
+							'Las coordenadas del edificio de la administración del Canal seran utilizadas como su posición actual. \n');
+					//$.mobile.hidePageLoadingMsg();	
+				dibujamapa(8.959591, -79.554851);			
+				}					
+			
+				function dibujamapa(mylat,mylon) {					
+					var latlng = new google.maps.LatLng(mylat, mylon);
+					var myOptions = {
+					zoom: 12,
+					center: latlng,
+					mapTypeId: google.maps.MapTypeId.ROADMAP
+					   };
+					var map = new google.maps.Map(document.getElementById("detallecomercio_map_canvas"),myOptions);
+						
+					//***************position marker after map is drawn******************	
+
+					 var currentPositionMarker = new google.maps.Marker({
+						position: latlng,
+						map: map,
+						title: 'Usted está aquí'
+					});	
+					currentPositionMarker.setIcon('http://ctmconcepts.com/acpbeneficios/imagenes/green-dot.png');
+					
+					var infowindow = new google.maps.InfoWindow();
+					google.maps.event.addListener(currentPositionMarker, 'click', function() {
+						infowindow.setContent('Su ubicación actual<br>Usted se encuentra aquí!');
+						infowindow.open(map, currentPositionMarker);
+					});					
+			
+					var results = new RegExp('[\\?&amp;]' + 'OfertaID' + '=([^&amp;#]*)').exec(window.location.href);
+					var myOfertaID= results[1] || 0;			
+					var detallecomercioUrl = 'http://ctmconcepts.com/acpbeneficios/OfertaServices.svc/getOferta?OfertaID=' + myOfertaID;
+					$.ajax(detallecomercioUrl,
+					{
+						beforeSend: function (xhr) {
+							$.mobile.showPageLoadingMsg();
+						},
+
+						complete: function () {
+							$.mobile.hidePageLoadingMsg();
+						},
+						contentType: 'application/json',
+						dataType: 'jsonp',
+						jsonp: 'callback',
+						type: 'GET',
+						error: function (xhr, ajaxOptions, thrownError) {
+							alert(xhr.status);
+							alert(xhr.responseText);
+							//alert(thrownError);
+						},
+						success: function (data) {
+							var detallecomercioresult = data.dameOfertaResult;
+							$('#detallecomerciologo').attr('src', detallecomercioresult.ComercioLogo);
+							$('#detallecomercio_nombre').text(detallecomercioresult.ComercioNombre);	
+							$('#textooferta').text(detallecomercioresult.OfertaDescripcion);							
+							$('#etiquetacomercio').text('Ubicaciones de ' + detallecomercioresult.ComercioNombre);							
+							var comercioPuntosUrl = 'http://ctmconcepts.com/acpbeneficios/OfertaServices.svc/ComercioPuntos?ComercioID=' + detallecomercioresult.ComercioID;						
+
+							
+						$.ajax(comercioPuntosUrl,
+						{
+							beforeSend: function (xhr) {
+								$.mobile.showPageLoadingMsg();
+							},
+
+							complete: function () {
+								$.mobile.hidePageLoadingMsg();
+							},
+							contentType: 'application/json',
+							dataType: 'jsonp',
+							jsonp: 'callback',
+							type: 'GET',
+							error: function (xhr, ajaxOptions, thrownError) {
+								alert(xhr.status);
+								alert(xhr.responseText);
+								//alert(thrownError);
+							},
+							success: function (data) {
+								var puntosresult = data.GetComercioPuntosResult;
+								$.each(puntosresult, function (index, listapuntos) {
+								//adicionar puntos
+								var newlatlng = new google.maps.LatLng(listapuntos.Lat, listapuntos.Lon);
+								 var newPositionMarker = new google.maps.Marker({
+									position: newlatlng,
+									map: map,
+									title: detallecomercioresult.ComercioNombre
+								});	
+								newPositionMarker.setIcon('http://ctmconcepts.com/acpbeneficios/imagenes/red-dot.png');
+								
+								var infowindow = new google.maps.InfoWindow();
+								google.maps.event.addListener(newPositionMarker, 'click', function() {
+									infowindow.setContent(detallecomercioresult.ComercioNombre + '<br>' + listapuntos.Direccion);
+									infowindow.open(map, newPositionMarker);
+								});									
+								
+								
+								
+								
+									
+								});
+
+							//end of success return call			
+							}
+						});							
+
+						//end of success return call			
+						}
+					});		
+
+	
+				}					
+														
+					
+			
+			}//end detallecomercio
+		
+		
+		
+		
+		
+		});
+	
+	
+	
+	</script>	
+
+	</div><!-- /content -->
+	
+	<div data-role="footer" data-theme="b" data-content-theme="b">
+		<div><h6 style="text-align: center;">Autoridad del Canal de Panamá - Todos los Derechos Reservados 2013 ©<br/><a href="terminos.html">Términos de uso.</a></h6></div>
+	</div><!-- /footer -->
+	
+</div><!-- /page -->
+
+</body>
+</html>
